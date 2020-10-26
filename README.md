@@ -19,6 +19,6 @@ Importing of resource files will be added in short time.
 - Upload project to github
 - Added AES-256-CBC encryption/decryption support
 - Basic implementation of exporting of resource files
-  - Parses image files of the specified file extension, with optional ignored folders/specific files
+  - Parses image files of the specified (or default) file extensions, with optional ignored folders/specific files
   - Exports files within the allowed size of a resource file (default or set by user)
 - Added test for exporting resource files.
