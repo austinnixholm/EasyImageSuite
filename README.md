@@ -11,6 +11,7 @@ This project was written for personal usage, but is free to use under the MIT Li
 
 ## Progress & Updates
 Current version: **0.0.1**
+
 This version currently only supports exporting resource files as of October 25th, 2020. 
 
 Importing of resource files will be added in short time.
