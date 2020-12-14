@@ -9,7 +9,6 @@ import java.util.Objects;
 public final class SuiteGlobals {
 
     private static final String[] FILE_EXTS = new String[]{"PNG", "png", "JPG", "jpg", "JPEG", "jpeg", "BMP", "bmp"};
-
     public static final String DEFAULT_EXPORT_FOLDER_NAME = "suite-exports";
     public static final String DEFAULT_FILE_EXTENSION = "JRC";
     public static final List<String> STANDARD_FILE_EXTENSIONS = List.of(FILE_EXTS);
@@ -46,12 +45,29 @@ public final class SuiteGlobals {
         return content;
     }
 
-    public static List<File> listf(String directoryName) {
-        File directory = new File(directoryName);
+    /**
+     * Gets a list of all files within a specific directory, including subfolders.
+     *
+     * @param directoryPath the path to the file directory.
+     * @return a list of ALL files within that directory.
+     */
+    public static List<File> listf(String directoryPath) {
+        File directory = new File(directoryPath);
         File[] fList = directory.listFiles();
         List<File> resultList = new ArrayList<>(Arrays.asList(fList));
         Arrays.stream(fList).filter(File::isDirectory).map(file -> listf(file.getAbsolutePath())).forEach(resultList::addAll);
         return resultList;
+    }
+
+    /**
+     * Gets the file extension of a given file.
+     *
+     * @param file the file.
+     * @return the file's extension as a String.
+     */
+    public static String getFileExtension(File file) {
+        String filePath = file.getPath();
+        return filePath.substring(filePath.lastIndexOf(".") + 1);
     }
 
     public static long bytesToMegaBytes(int bytes) {

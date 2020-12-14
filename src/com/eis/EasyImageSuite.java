@@ -23,17 +23,20 @@ public class EasyImageSuite {
         return this;
     }
 
-    public void encryptToResources(String encryptionKey) {
-        SuiteResponse response = exporter.export(imageFileSystem, encryptionKey);
-        if (!response.isSuccessful()) {
-            for (String err : response.getErrors()) {
-                System.out.println(err);
-            }
-        }
+    public void encryptToResources(String encryptionKey, String iv) {
+        SuiteResponse response = exporter.export(imageFileSystem, encryptionKey, iv);
+        tryPrintErrors(response);
     }
 
-    public void importResources(String decryptionKey) {
-        SuiteResponse response = importer.importResources(imageFileSystem, decryptionKey);
+    public void importResources(String decryptionKey, String iv) {
+        SuiteResponse response = importer.importResources(imageFileSystem, decryptionKey, iv);
+        tryPrintErrors(response);
+    }
+
+    private void tryPrintErrors(SuiteResponse response) {
+        if (!response.isSucessful())
+            for (String err : response.getErrors())
+                System.out.println(err);
     }
 
 }

@@ -61,7 +61,7 @@ public class ImageFileSystem {
      */
     @Getter
     @Setter
-    private String resourceFolder;
+    private String resourceFolder = "";
 
     /**
      * Single parameter constructor containing the root path of the file system.

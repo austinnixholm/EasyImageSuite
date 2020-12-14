@@ -4,7 +4,7 @@ import com.eis.SuiteGlobals;
 import com.eis.models.ExportAttributes;
 import com.eis.models.ImageFileSystem;
 import com.eis.models.SuiteResponse;
-import com.eis.security.EncryptionSuite;
+import com.eis.security.EncryptionFunctions;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
@@ -28,7 +28,7 @@ public class Exporter {
     }
 
     @SneakyThrows
-    public SuiteResponse export(ImageFileSystem fileSystem, String encryptionKey) {
+    public SuiteResponse export(ImageFileSystem fileSystem, String encryptionKey, String iv) {
         SuiteResponse response = new SuiteResponse();
 
         ArrayList<String> ignoredFolders = (ArrayList<String>) fileSystem.getIgnoredFolders();
@@ -43,7 +43,7 @@ public class Exporter {
 
         // End with an unsuccessful response if the dir doesn't exist
         if (!directory.exists()) {
-            response.setSuccessful(false);
+            response.sucessful = false;
             response.addError("Root directory for path: '" + fileSystem.getRootPath() + "' does not exist!");
             return response;
         }
@@ -51,21 +51,20 @@ public class Exporter {
         ArrayList<File> directoryListing = (ArrayList<File>) SuiteGlobals.listf(fileSystem.getRootPath());
         // End with an unsuccessful response if there are no files in this directory.
         if (directoryListing.size() == 0) {
-            response.setSuccessful(false);
+            response.sucessful = false;
             response.addError("Root directory for path: '" + fileSystem.getRootPath() + "' contains no files!");
             return response;
         }
 
-        String resourceFolderPath = pathOrAvailable(fileSystem.getRootPath() + File.separator + attributes.getExportFolderName());
+        String resourceFolderPath = getOrCreateExportPath(fileSystem.getRootPath() + File.separator + attributes.getExportFolderName());
         Files.createDirectories(Paths.get(resourceFolderPath));
         String currentResourceFilePath = createResourceFile(resourceFolderPath, exportFileExt, resourceFileIndex);
 
         // Go through all accepted files of our file system, and encrypt them.
         for (File file : directoryListing) {
             String absolutePath = file.getAbsolutePath();
-            String filePath = file.getPath();
             String imagePath = absolutePath.replace(fileSystem.getRootPath(), "");
-            String extension = filePath.substring(filePath.lastIndexOf(".") + 1);
+            String extension = getFileExtension(file);
 
             boolean isIgnoredFile = ignoredFiles.stream().anyMatch(f -> f.toLowerCase().equals(file.getName().toLowerCase()));
             boolean isInIgnoredFolder = ignoredFolders.stream().anyMatch(f -> file.getAbsolutePath().contains(f));
@@ -80,11 +79,13 @@ public class Exporter {
             // Wrap image path in brackets to identify later
             String newImgPath = "[" + imagePath + "]";
             byte[] bytes = fileToBytes(absolutePath);
-            String encryptedText = new String(EncryptionSuite.encrypt(bytes, encryptionKey));
-            String encryptedImagePath = new String(EncryptionSuite.encrypt(newImgPath.getBytes(), encryptionKey));
-            tempBuffer.append(encryptedImagePath);
-            tempBuffer.append(encryptedText).append("]");
-            tempBuffer.append('\n');
+            byte[] imgPathBytes = newImgPath.getBytes();
+            byte[] destBytes = new byte[bytes.length + imgPathBytes.length];
+
+            System.arraycopy(imgPathBytes, 0, destBytes, 0, imgPathBytes.length);
+            System.arraycopy(bytes, 0, destBytes, imgPathBytes.length, bytes.length);
+
+            tempBuffer.append(new String(destBytes));
 
             byte[] oldBufferBytes = currentResourceBuffer.getBytes();
             byte[] tempBufferBytes = tempBuffer.toString().getBytes();
@@ -93,8 +94,11 @@ public class Exporter {
 
             // If the estimated size in bytes of all data combined is larger than the desired maximum...
             if ((int) estimatedFileSizeMegabytes >= attributes.getMaximumFileSize()) {
+                // Encrypt all the previous data, and store that into a string
+                String encryptedText = EncryptionFunctions.encrypt(currentResourceBuffer, encryptionKey, iv);
+                //new String(EncryptionSuite.encrypt(currentResourceBuffer.getBytes(), encryptionKey));
                 // Write all the previous data to the current resource file
-                writeToResourceFile(currentResourceFilePath, currentResourceBuffer);
+                writeToResourceFile(currentResourceFilePath, encryptedText);
                 // Reset the current resource buffer text with the newly generated data to start it off
                 resourceBuffer = new StringBuilder().append(tempBuffer);
                 // Set the new current resource file path to a newly generated resource file with incremented index.
@@ -104,11 +108,14 @@ public class Exporter {
                 resourceBuffer.append(tempBuffer);
 
             log("Processed " + imagePath);
+            break; // do this once
         }
-        if (!resourceBuffer.toString().isEmpty())
-            writeToResourceFile(currentResourceFilePath, resourceBuffer.toString());
+        if (!resourceBuffer.toString().isEmpty()) {
+            String encryptedText = EncryptionFunctions.encrypt(resourceBuffer.toString(), encryptionKey, iv);
+            writeToResourceFile(currentResourceFilePath, encryptedText);
+        }
 
-        response.setSuccessful(true);
+        response.sucessful = true;
         return response;
     }
 
@@ -124,20 +131,34 @@ public class Exporter {
         return resourceFile.getAbsolutePath();
     }
 
-    private String pathOrAvailable(String folderPath) {
-        String original = folderPath;
+    /**
+     * Returns the current valid export directory file path.
+     * <p>
+     * If the desired path already exists, then a folder with an incremented
+     * number will be created instead, which this method returns.
+     *
+     * @param desiredExportFolderPath the desired name of this export folder.
+     * @return the path of the valid export folder.
+     */
+    private String getOrCreateExportPath(String desiredExportFolderPath) {
+        String exportFolderPath = desiredExportFolderPath;
         int index = 1;
         boolean goodPath = false;
-        while (!goodPath) {
-            if (new File(folderPath).exists()) {
-                index++;
-                folderPath = original + index;
-            } else
+
+        do {
+            if (new File(exportFolderPath).exists())
+                exportFolderPath = desiredExportFolderPath + index++;
+            else
                 goodPath = true;
-        }
-        return folderPath;
+        } while (!goodPath);
+        return exportFolderPath;
     }
 
+    /**
+     * Writes a string to a desired file.
+     * @param filePath the path to the file
+     * @param buffer   the string to write to the file
+     */
     private void writeToResourceFile(String filePath, String buffer) {
         try {
             FileWriter fileWriter = new FileWriter(filePath);

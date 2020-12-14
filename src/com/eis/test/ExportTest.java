@@ -11,10 +11,12 @@ public class ExportTest {
         EasyImageSuite easyImageSuite = new EasyImageSuite()
                 .setImageFileSystem(new ImageFileSystem("C:\\users\\pelic\\Documents\\someImages"));
 
-        easyImageSuite.getExporter().getExportAttributes().setMaximumFileSize(1);
+        easyImageSuite.getImageFileSystem().getIgnoredFolders().add("image-sub2");
+        easyImageSuite.getImageFileSystem().getIgnoredFolders().add("ignored-1");
 
-        String key = "abc123";
-        easyImageSuite.encryptToResources(key);
+        String key = "APPLESAUSS";
+        String iv = "APPLESAUCEISGOOD";
+        easyImageSuite.encryptToResources(key, iv);
     }
 
 }
