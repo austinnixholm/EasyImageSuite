@@ -15,6 +15,7 @@ public final class SuiteGlobals {
     public static final int DEFAULT_MAXIMUM_FILE_SIZE_MB = 10;
     private static final long MEGABYTE = 1024L * 1024L;
     public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_RED = "\u001B[31m";
     public static final String ANSI_BLACK_BACKGROUND = "\u001B[40m";
 
     /**
@@ -73,4 +74,10 @@ public final class SuiteGlobals {
     public static long bytesToMegaBytes(int bytes) {
         return bytes / MEGABYTE;
     }
+
+    public static void log(String message) {
+        System.out.println(ANSI_YELLOW + "[EasyImageSuite Exporter] " + message);
+    }
+    public static void logErr(String message) { System.out.println(SuiteGlobals.ANSI_RED + "[EasyImageSuite ERROR] " + message); }
+
 }

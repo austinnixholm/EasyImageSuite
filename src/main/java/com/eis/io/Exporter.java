@@ -1,9 +1,7 @@
 package com.eis.io;
 
 import com.eis.SuiteGlobals;
-import com.eis.models.ExportAttributes;
-import com.eis.models.ImageFileSystem;
-import com.eis.models.SuiteResponse;
+import com.eis.models.*;
 import com.eis.security.EncryptionFunctions;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -16,6 +14,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import static com.eis.SuiteGlobals.*;
+import static com.eis.models.SuiteErrorType.*;
 
 public class Exporter {
 
@@ -27,9 +26,8 @@ public class Exporter {
         return this;
     }
 
-    @SneakyThrows
-    public SuiteResponse export(ImageFileSystem fileSystem, String encryptionKey, String iv) {
-        SuiteResponse response = new SuiteResponse();
+    public SuiteExportResponse export(ImageFileSystem fileSystem, String encryptionKey, String iv) throws IOException {
+        SuiteExportResponse response = new SuiteExportResponse();
 
         ArrayList<String> ignoredFolders = (ArrayList<String>) fileSystem.getIgnoredFolders();
         ArrayList<String> ignoredFiles = (ArrayList<String>) fileSystem.getIgnoredFileNames();
@@ -41,10 +39,12 @@ public class Exporter {
         StringBuilder resourceBuffer = new StringBuilder();
         int resourceFileIndex = 1;
 
+        log("Starting resource export\n");
+
         // End with an unsuccessful response if the dir doesn't exist
         if (!directory.exists()) {
             response.sucessful = false;
-            response.addError("Root directory for path: '" + fileSystem.getRootPath() + "' does not exist!");
+            response.addError(INVALID_RESOURCE_DIRECTORY, "Root directory for path: '" + fileSystem.getRootPath() + "' does not exist!");
             return response;
         }
 
@@ -52,7 +52,7 @@ public class Exporter {
         // End with an unsuccessful response if there are no files in this directory.
         if (directoryListing.size() == 0) {
             response.sucessful = false;
-            response.addError("Root directory for path: '" + fileSystem.getRootPath() + "' contains no files!");
+            response.addError(NO_FILES_IN_RESOURCE_DIRECTORY, "Root directory for path: '" + fileSystem.getRootPath() + "' contains no files!");
             return response;
         }
 
@@ -96,9 +96,10 @@ public class Exporter {
             if ((int) estimatedFileSizeMegabytes >= attributes.getMaximumFileSize()) {
                 // Encrypt all the previous data, and store that into a string
                 String encryptedText = EncryptionFunctions.encrypt(currentResourceBuffer, encryptionKey, iv);
-                //new String(EncryptionSuite.encrypt(currentResourceBuffer.getBytes(), encryptionKey));
                 // Write all the previous data to the current resource file
                 writeToResourceFile(currentResourceFilePath, encryptedText);
+                // Write the current raw, non encrypted data with the resource file path as the key to the response
+                response.getRawExportData().add(new BasicKeyValuePair<>(currentResourceFilePath, currentResourceBuffer));
                 // Reset the current resource buffer text with the newly generated data to start it off
                 resourceBuffer = new StringBuilder().append(tempBuffer);
                 // Set the new current resource file path to a newly generated resource file with incremented index.
@@ -108,13 +109,17 @@ public class Exporter {
                 resourceBuffer.append(tempBuffer);
 
             log("Processed " + imagePath);
-            break; // do this once
         }
+        // Take everything that's left in the resource buffer and encrypt it.
         if (!resourceBuffer.toString().isEmpty()) {
             String encryptedText = EncryptionFunctions.encrypt(resourceBuffer.toString(), encryptionKey, iv);
             writeToResourceFile(currentResourceFilePath, encryptedText);
+            // Write the current raw, non encrypted data with the resource file path as the key to the response
+            response.getRawExportData().add(new BasicKeyValuePair<>(currentResourceFilePath, resourceBuffer.toString()));
         }
 
+        int filesExported = response.getRawExportData().size();
+        log("Successfully exported " + filesExported + " file" + (filesExported > 1 ? "s" : "") + "\n");
         response.sucessful = true;
         return response;
     }
@@ -156,6 +161,7 @@ public class Exporter {
 
     /**
      * Writes a string to a desired file.
+     *
      * @param filePath the path to the file
      * @param buffer   the string to write to the file
      */
@@ -170,7 +176,4 @@ public class Exporter {
         }
     }
 
-    private void log(String message) {
-        System.out.println(ANSI_YELLOW + "[EasyImageSuite Exporter] " + message);
-    }
 }
