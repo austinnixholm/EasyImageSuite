@@ -5,8 +5,10 @@ import com.eis.io.Importer;
 import com.eis.models.*;
 import com.eis.models.error.SuiteError;
 import com.eis.models.response.SuiteExportResponse;
+import com.eis.models.response.SuiteCredentialGenerationResponse;
 import com.eis.models.response.SuiteImportResponse;
 import com.eis.models.response.SuiteResponse;
+import com.eis.security.EncryptionFunctions;
 import lombok.Getter;
 
 import java.io.IOException;
@@ -15,7 +17,7 @@ import static com.eis.SuiteGlobals.*;
 
 /**
  * @author Austin Nixholm
- * @version 0.1.0
+ * @version 0.1.1
  */
 public class EasyImageSuite {
     @Getter
@@ -67,6 +69,17 @@ public class EasyImageSuite {
         SuiteImportResponse response = importer.importResources(imageFileSystem, decryptionKey, iv);
         tryPrintErrors(response);
         return response;
+    }
+
+    /**
+     * Returns a {@link SuiteCredentialGenerationResponse} containing randomly generated credentials
+     * for the {@link AlgorithmType} passed to the method.
+     *
+     * @param type the type of algorithm
+     * @return the response containing credentials.
+     */
+    public SuiteCredentialGenerationResponse generateCredentials(AlgorithmType type) {
+        return new SuiteCredentialGenerationResponse(EncryptionFunctions.generateKey(type), EncryptionFunctions.generateIV(type));
     }
 
     private void tryPrintErrors(SuiteResponse response) {

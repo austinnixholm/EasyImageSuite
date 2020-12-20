@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static com.eis.SuiteGlobals.*;
@@ -56,25 +57,23 @@ public class Exporter {
 
         // End with an unsuccessful response if the dir doesn't exist
         if (!directory.exists()) {
-            response.sucessful = false;
-            response.addError(INVALID_RESOURCE_DIRECTORY, "Root directory for path: '" + fileSystem.getRootPath() + "' does not exist!");
-            return response;
+            return response.setError(INVALID_RESOURCE_DIRECTORY, "Root directory for path: '" + fileSystem.getRootPath() + "' does not exist!");
         }
 
         ArrayList<File> directoryListing = (ArrayList<File>) SuiteGlobals.listf(fileSystem.getRootPath());
         // End with an unsuccessful response if there are no files in this directory.
         if (directoryListing.size() == 0) {
-            response.sucessful = false;
-            response.addError(NO_FILES_IN_RESOURCE_DIRECTORY, "Root directory for path: '" + fileSystem.getRootPath() + "' contains no files!");
-            return response;
+            return response.setError(NO_FILES_IN_RESOURCE_DIRECTORY, "Root directory for path: '" + fileSystem.getRootPath() + "' contains no files!");
         }
-
         String resourceFolderPath = getOrCreateExportPath(fileSystem.getRootPath() + File.separator + attributes.getExportFolderName());
         Files.createDirectories(Paths.get(resourceFolderPath));
         String currentResourceFilePath = createResourceFile(resourceFolderPath, exportFileExt, resourceFileIndex);
 
-        @SuppressWarnings("OptionalGetWithoutIsPresent") final int highestFilePathLength = directoryListing.stream().map(f -> f.getAbsolutePath().replace(fileSystem.getRootPath(), "").length()).max(Integer::compare).get();
-
+        final Optional<Integer> highestFilePathResult = directoryListing.stream().map(f -> f.getAbsolutePath().replace(fileSystem.getRootPath(), "").length()).max(Integer::compare);
+        if (!highestFilePathResult.isPresent()) {
+            return response.setError(SUITE_ERROR, "Couldn't generate value for highest path length.");
+        }
+        final int highestFilePathLength = highestFilePathResult.get();
         // Go through all accepted files of our file system, and encrypt them.
         for (File file : directoryListing) {
             String absolutePath = file.getAbsolutePath();
@@ -130,7 +129,7 @@ public class Exporter {
             byte[] imageBytes = new byte[(int) file.length()];
             imageInFile.read(imageBytes);
             // Convert the bytes from this image into an encoded base64 string
-            String imageStr = toEncodedBase64String(imageBytes);
+            String imageStr = EncryptionFunctions.toEncodedBase64String(imageBytes);
 
             // Get the image bytes, record its length
             int imageBytesLen = imageStr.length();

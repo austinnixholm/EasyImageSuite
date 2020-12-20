@@ -87,7 +87,7 @@ public class Importer {
                     // Replace the buffer with the next section past delimiter
                     buffer = buffer.substring(imgCharsLenSeek + 1);
 
-                    byte[] imageBytes = toDecodedBase64String(buffer.substring(0, imageCharsLen));
+                    byte[] imageBytes = EncryptionFunctions.toDecodedBase64String(buffer.substring(0, imageCharsLen));
                     InputStream is = new ByteArrayInputStream(imageBytes);
                     BufferedImage image = ImageIO.read(is);
 
