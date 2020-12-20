@@ -1,10 +1,7 @@
 package com.eis;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public final class SuiteGlobals {
 
@@ -71,6 +68,26 @@ public final class SuiteGlobals {
         return filePath.substring(filePath.lastIndexOf(".") + 1);
     }
 
+    /**
+     * Encodes the byte array into base64 string
+     *
+     * @param imageByteArray - byte array
+     * @return String a {@link java.lang.String}
+     */
+    public static String toEncodedBase64String(byte[] imageByteArray) {
+        return Base64.getEncoder().encodeToString(imageByteArray);
+    }
+
+    /**
+     * Decodes the base64 string into byte array
+     *
+     * @param imageDataString - a {@link java.lang.String}
+     * @return byte array
+     */
+    public static byte[] toDecodedBase64String(String imageDataString) {
+        return Base64.getDecoder().decode(imageDataString);
+    }
+
     public static long bytesToMegaBytes(int bytes) {
         return bytes / MEGABYTE;
     }
@@ -78,6 +95,9 @@ public final class SuiteGlobals {
     public static void log(String message) {
         System.out.println(ANSI_YELLOW + "[EasyImageSuite] " + message);
     }
-    public static void logErr(String message) { System.out.println(SuiteGlobals.ANSI_RED + "[EasyImageSuite ERROR] " + message); }
+
+    public static void logErr(String message) {
+        System.out.println(SuiteGlobals.ANSI_RED + "[EasyImageSuite ERROR] " + message);
+    }
 
 }

@@ -7,6 +7,7 @@ import com.eis.security.EncryptionFunctions;
 import lombok.Getter;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -61,8 +62,7 @@ public class Exporter {
         Files.createDirectories(Paths.get(resourceFolderPath));
         String currentResourceFilePath = createResourceFile(resourceFolderPath, exportFileExt, resourceFileIndex);
 
-        @SuppressWarnings("OptionalGetWithoutIsPresent")
-        final int highestFilePathLength = directoryListing.stream().map(f -> f.getAbsolutePath().replace(fileSystem.getRootPath(), "").length()).max(Integer::compare).get();
+        @SuppressWarnings("OptionalGetWithoutIsPresent") final int highestFilePathLength = directoryListing.stream().map(f -> f.getAbsolutePath().replace(fileSystem.getRootPath(), "").length()).max(Integer::compare).get();
 
         // Go through all accepted files of our file system, and encrypt them.
         for (File file : directoryListing) {
@@ -79,14 +79,6 @@ public class Exporter {
             // Create a temporary copy of our current resource string buffer
             String currentResourceBuffer = resourceBuffer.toString();
             StringBuilder tempBuffer = new StringBuilder();
-
-            //TODO: Idea for header
-            //      get highest amount of characters of any of the file names
-            //      add the start of each file 4 character long total amount, spaces filling in empty gaps
-            //      same idea for the file name, then add img bytes length, then add the image bytes, finally encrypt everything
-            //      representation:
-            //      25 = highest amount of chars in a name
-            //      25  :title_of_file          :25124               :image_bytes
 
             StringBuilder headerBuffer = new StringBuilder();
             // sectors separated by ':' delimiter
@@ -122,10 +114,15 @@ public class Exporter {
             headerBuffer.append(pathSector);
             headerBuffer.append(':');
 
-            // Get the image bytes, record its length
-            byte[] imageBytes = fileToBytes(absolutePath);
-            int imageBytesLen = imageBytes.length;
+            // Retrieve bytes from this image
+            FileInputStream imageInFile = new FileInputStream(new File(absolutePath));
+            byte[] imageBytes = new byte[(int) file.length()];
+            imageInFile.read(imageBytes);
+            // Convert the bytes from this image into an encoded base64 string
+            String imageStr = toEncodedBase64String(imageBytes);
 
+            // Get the image bytes, record its length
+            int imageBytesLen = imageStr.length();
             char[] imageCharLengthSector = new char[20];
             char[] imageCharLenChars = String.valueOf(imageBytesLen).toCharArray();
             // This naming... copy the characters of the length of the image bytes char array to this sector
@@ -143,13 +140,9 @@ public class Exporter {
             // Get the header as a string
             String headerString = headerBuffer.toString();
             byte[] headerBytes = headerString.getBytes();
-            byte[] resourceByteBuffer = new byte[imageBytes.length + headerBytes.length];
 
-            // Copies the header, and the image bytes to the same target byte array
-            System.arraycopy(headerBytes, 0, resourceByteBuffer, 0, headerBytes.length);
-            System.arraycopy(imageBytes, 0, resourceByteBuffer, headerBytes.length, imageBytes.length);
-
-            tempBuffer.append(new String(resourceByteBuffer));
+            tempBuffer.append(new String(headerBytes));
+            tempBuffer.append(imageStr);
 
             byte[] oldBufferBytes = currentResourceBuffer.getBytes();
             byte[] tempBufferBytes = tempBuffer.toString().getBytes();
@@ -188,6 +181,15 @@ public class Exporter {
         return response;
     }
 
+    /**
+     * Attempts to create a resource file within a specific directory, constructing
+     * the name of the file from the parameters passed.
+     *
+     * @param directory the path to the directory for this file
+     * @param fileExt   the extension to be created with this file name
+     * @param index     the index of this file within the directory
+     * @return the path of the created (or potentially existing) file
+     */
     private String createResourceFile(String directory, String fileExt, int index) {
         File resourceFile = new File(directory + File.separator + "resource-" + index + "." + fileExt);
         try {
