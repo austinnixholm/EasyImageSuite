@@ -10,12 +10,18 @@ This project was written for personal usage, but is free to use under the MIT Li
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/austinnixholm/EasyImageSuite/blob/main/LICENSE)
 
 ## Progress & Updates
-Current version: **0.1.0**
+Current version: **0.1.1**
 
-This version currently supports exporting and importing encrypted resource files using AES-256-CBC as of December 19, 2020.
+This version currently supports exporting **and** importing encrypted resource files using AES-256-CBC.
+
+Key/IV generation is also available as of December 20, 2020.
 
 See src/test for a working *no restrictions* implementation.
 Note: Export restrictions are not fully tested.
+
+### Version 0.1.1
+- Added credential generation
+- Added SUITE_ERROR error response type
 
 ### Version 0.1.0:
 - Cleaned up project, refactored directories
