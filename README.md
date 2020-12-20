@@ -19,7 +19,7 @@ Key/IV generation is also available as of December 20, 2020.
 See src/test for a working *no restrictions* implementation.
 Note: Export restrictions are not fully tested.
 
-### Version 0.1.1
+### Version 0.1.1:
 - Added credential generation
 - Added SUITE_ERROR error response type
 
