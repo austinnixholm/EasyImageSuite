@@ -1,4 +1,4 @@
-package com.eis.models;
+package com.eis.models.error;
 
 public enum SuiteErrorType {
     NO_RESOURCE_FOLDER_SPECIFIED,

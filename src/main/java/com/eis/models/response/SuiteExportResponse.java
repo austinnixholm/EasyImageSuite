@@ -1,5 +1,6 @@
-package com.eis.models;
+package com.eis.models.response;
 
+import com.eis.models.BasicKeyValuePair;
 import lombok.Getter;
 
 import java.util.ArrayList;

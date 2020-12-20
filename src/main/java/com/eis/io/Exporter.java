@@ -2,9 +2,9 @@ package com.eis.io;
 
 import com.eis.SuiteGlobals;
 import com.eis.models.*;
+import com.eis.models.response.SuiteExportResponse;
 import com.eis.security.EncryptionFunctions;
 import lombok.Getter;
-import lombok.SneakyThrows;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -12,9 +12,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.stream.IntStream;
 
 import static com.eis.SuiteGlobals.*;
-import static com.eis.models.SuiteErrorType.*;
+import static com.eis.models.error.SuiteErrorType.*;
 
 public class Exporter {
 
@@ -60,6 +61,9 @@ public class Exporter {
         Files.createDirectories(Paths.get(resourceFolderPath));
         String currentResourceFilePath = createResourceFile(resourceFolderPath, exportFileExt, resourceFileIndex);
 
+        @SuppressWarnings("OptionalGetWithoutIsPresent")
+        final int highestFilePathLength = directoryListing.stream().map(f -> f.getAbsolutePath().replace(fileSystem.getRootPath(), "").length()).max(Integer::compare).get();
+
         // Go through all accepted files of our file system, and encrypt them.
         for (File file : directoryListing) {
             String absolutePath = file.getAbsolutePath();
@@ -76,16 +80,76 @@ public class Exporter {
             String currentResourceBuffer = resourceBuffer.toString();
             StringBuilder tempBuffer = new StringBuilder();
 
-            // Wrap image path in brackets to identify later
-            String newImgPath = "[" + imagePath + "]";
-            byte[] bytes = fileToBytes(absolutePath);
-            byte[] imgPathBytes = newImgPath.getBytes();
-            byte[] destBytes = new byte[bytes.length + imgPathBytes.length];
+            //TODO: Idea for header
+            //      get highest amount of characters of any of the file names
+            //      add the start of each file 4 character long total amount, spaces filling in empty gaps
+            //      same idea for the file name, then add img bytes length, then add the image bytes, finally encrypt everything
+            //      representation:
+            //      25 = highest amount of chars in a name
+            //      25  :title_of_file          :25124               :image_bytes
 
-            System.arraycopy(imgPathBytes, 0, destBytes, 0, imgPathBytes.length);
-            System.arraycopy(bytes, 0, destBytes, imgPathBytes.length, bytes.length);
+            StringBuilder headerBuffer = new StringBuilder();
+            // sectors separated by ':' delimiter
+            // Seek 4, remove spaces, returns next seek length for the path sector
+            char[] maxPathLengthSector = new char[4];
+            char[] szChars = String.valueOf(highestFilePathLength).toCharArray();
+            System.arraycopy(szChars, 0, maxPathLengthSector, 0, szChars.length);
+            int szCharLength = szChars.length;
+            int fillCount = maxPathLengthSector.length - szCharLength;
+            // If we need to fill any more characters to this sector, fill it with spaces
+            if (fillCount > 0)
+                IntStream.range(0, fillCount).forEach(i -> maxPathLengthSector[szCharLength + i] = ' ');
 
-            tempBuffer.append(new String(destBytes));
+            // Append this sector to the header buffer with separator
+            headerBuffer.append(maxPathLengthSector);
+            headerBuffer.append(':');
+
+            // Create the sector of characters, giving the size of the highest possible path length
+            // Get the chars from the image path, record its length
+            char[] pathSector = new char[highestFilePathLength];
+            char[] imagePathChars = imagePath.toCharArray();
+            int imgPathCharsLen = imagePathChars.length;
+            // Copy the characters from the image path to the start of the pathSector char array
+            System.arraycopy(imagePathChars, 0, pathSector, 0, imgPathCharsLen);
+
+            // Determine if we have to fill any characters to this sector
+            fillCount = pathSector.length - imgPathCharsLen;
+            // If so, fill it with spaces
+            if (fillCount > 0)
+                IntStream.range(0, fillCount).forEach(i -> pathSector[imgPathCharsLen + i] = ' ');
+
+            // Append the header with the separator
+            headerBuffer.append(pathSector);
+            headerBuffer.append(':');
+
+            // Get the image bytes, record its length
+            byte[] imageBytes = fileToBytes(absolutePath);
+            int imageBytesLen = imageBytes.length;
+
+            char[] imageCharLengthSector = new char[20];
+            char[] imageCharLenChars = String.valueOf(imageBytesLen).toCharArray();
+            // This naming... copy the characters of the length of the image bytes char array to this sector
+            int imageCharLenCharsLen = imageCharLenChars.length;
+            System.arraycopy(imageCharLenChars, 0, imageCharLengthSector, 0, imageCharLenCharsLen);
+
+            fillCount = imageCharLengthSector.length - imageCharLenCharsLen;
+            if (fillCount > 0)
+                IntStream.range(0, fillCount).forEach(i -> imageCharLengthSector[imageCharLenCharsLen + i] = ' ');
+
+            // Append the sector determining the amount of chars to seek from the image bytes ahead.
+            headerBuffer.append(imageCharLengthSector);
+            headerBuffer.append(':');
+
+            // Get the header as a string
+            String headerString = headerBuffer.toString();
+            byte[] headerBytes = headerString.getBytes();
+            byte[] resourceByteBuffer = new byte[imageBytes.length + headerBytes.length];
+
+            // Copies the header, and the image bytes to the same target byte array
+            System.arraycopy(headerBytes, 0, resourceByteBuffer, 0, headerBytes.length);
+            System.arraycopy(imageBytes, 0, resourceByteBuffer, headerBytes.length, imageBytes.length);
+
+            tempBuffer.append(new String(resourceByteBuffer));
 
             byte[] oldBufferBytes = currentResourceBuffer.getBytes();
             byte[] tempBufferBytes = tempBuffer.toString().getBytes();

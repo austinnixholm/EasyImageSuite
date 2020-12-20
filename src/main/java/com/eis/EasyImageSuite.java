@@ -3,6 +3,10 @@ package com.eis;
 import com.eis.io.Exporter;
 import com.eis.io.Importer;
 import com.eis.models.*;
+import com.eis.models.error.SuiteError;
+import com.eis.models.response.SuiteExportResponse;
+import com.eis.models.response.SuiteImportResponse;
+import com.eis.models.response.SuiteResponse;
 import lombok.Getter;
 
 import java.io.IOException;

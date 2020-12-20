@@ -1,4 +1,4 @@
-package com.eis.models;
+package com.eis.models.error;
 
 public class SuiteError {
     public SuiteErrorType type;

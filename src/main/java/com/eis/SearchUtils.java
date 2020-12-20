@@ -1,6 +1,6 @@
 package com.eis;
 
-import com.eis.models.StringSearchResponse;
+import com.eis.models.response.StringSearchResponse;
 
 /**
  * Utility functions for searching.

@@ -1,6 +1,10 @@
 import com.eis.EasyImageSuite;
 import com.eis.models.*;
 
+import com.eis.models.error.SuiteError;
+import com.eis.models.response.SuiteExportResponse;
+import com.eis.models.response.SuiteImportResponse;
+import com.eis.models.response.SuiteResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

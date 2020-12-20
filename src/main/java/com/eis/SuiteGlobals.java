@@ -76,7 +76,7 @@ public final class SuiteGlobals {
     }
 
     public static void log(String message) {
-        System.out.println(ANSI_YELLOW + "[EasyImageSuite Exporter] " + message);
+        System.out.println(ANSI_YELLOW + "[EasyImageSuite] " + message);
     }
     public static void logErr(String message) { System.out.println(SuiteGlobals.ANSI_RED + "[EasyImageSuite ERROR] " + message); }
 

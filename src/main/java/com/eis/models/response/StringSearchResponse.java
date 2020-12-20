@@ -1,4 +1,4 @@
-package com.eis.models;
+package com.eis.models.response;
 
 import lombok.Getter;
 
