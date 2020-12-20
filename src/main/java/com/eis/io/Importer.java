@@ -7,7 +7,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -38,6 +42,7 @@ public class Importer {
 
         // Go through each resource file.
         try {
+            ImageIO.setUseCache(false);
             for (File file : Objects.requireNonNull(resourceFolderFile.listFiles())) {
                 String extension = getFileExtension(file);
                 String absolutePath = file.getAbsolutePath();
@@ -83,7 +88,10 @@ public class Importer {
                     buffer = buffer.substring(imgCharsLenSeek + 1);
 
                     byte[] imageBytes = toDecodedBase64String(buffer.substring(0, imageCharsLen));
-                    response.getResourceCache().addResource(new ResourceImage(imagePath, imageBytes));
+                    InputStream is = new ByteArrayInputStream(imageBytes);
+                    BufferedImage image = ImageIO.read(is);
+
+                    response.getResourceCache().addResource(new ResourceImage(imagePath, image));
 
                     if (imageCharsLen >= decryptedData.length() - 1)
                         endOfFile = true;

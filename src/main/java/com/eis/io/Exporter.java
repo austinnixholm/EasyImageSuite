@@ -28,6 +28,17 @@ public class Exporter {
         return this;
     }
 
+    /**
+     * Attempts to encrypt and export all resources available within an {@link ImageFileSystem},
+     * and returns a {@link SuiteExportResponse} determining the success, and containing raw export data
+     * related to this export operation.
+     *
+     * @param fileSystem    the {@link ImageFileSystem}
+     * @param encryptionKey the encryption key
+     * @param iv            the encryption IV
+     * @return the {@link SuiteExportResponse} for this operation.
+     * @throws IOException
+     */
     public SuiteExportResponse export(ImageFileSystem fileSystem, String encryptionKey, String iv) throws IOException {
         SuiteExportResponse response = new SuiteExportResponse();
 

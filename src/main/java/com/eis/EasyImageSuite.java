@@ -15,21 +15,34 @@ import static com.eis.SuiteGlobals.*;
 
 /**
  * @author Austin Nixholm
- * @version 0.0.1
+ * @version 0.1.0
  */
 public class EasyImageSuite {
     @Getter
     private ImageFileSystem imageFileSystem;
-    @Getter
     private final Exporter exporter = new Exporter();
-    @Getter
     private final Importer importer = new Importer();
 
+    /**
+     * Sets the ImageFileSystem object, containing information on the filesystem
+     * where files will be written to/read from during either exporting or importing.
+     *
+     * @param imageFileSystem the {@link ImageFileSystem} object
+     * @return this instance.
+     */
     public EasyImageSuite setImageFileSystem(ImageFileSystem imageFileSystem) {
         this.imageFileSystem = imageFileSystem;
         return this;
     }
 
+    /**
+     * Attempts to encrypt all resources available within this class' current {@link ImageFileSystem}
+     * and returns a {@link SuiteExportResponse} containing the result from the operation.
+     *
+     * @param encryptionKey the encryption key
+     * @param iv            the encryption IV
+     * @return the export response.
+     */
     public SuiteExportResponse encryptToResources(String encryptionKey, String iv) {
         SuiteExportResponse response = null;
         try {
@@ -41,6 +54,15 @@ public class EasyImageSuite {
         return response;
     }
 
+    /**
+     * Attempts to decrypt and import all resource files from the specified
+     * resource file within this class' current {@link ImageFileSystem} object,
+     * and returns a {@link SuiteImportResponse} containing the result from the operation.
+     *
+     * @param decryptionKey the decryption key
+     * @param iv            the decryption IV
+     * @return the import response.
+     */
     public SuiteImportResponse importResources(String decryptionKey, String iv) {
         SuiteImportResponse response = importer.importResources(imageFileSystem, decryptionKey, iv);
         tryPrintErrors(response);

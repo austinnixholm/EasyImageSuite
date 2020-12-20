@@ -5,6 +5,11 @@ import lombok.Setter;
 
 import static com.eis.SuiteGlobals.*;
 
+/**
+ * Specific attributes associated with resource file exporting.
+ *
+ * @see com.eis.io.Exporter
+ */
 public class ExportAttributes {
     /**
      * The maximum file size for an export resource file, in megabytes.
@@ -22,10 +27,23 @@ public class ExportAttributes {
 
     public ExportAttributes() { }
 
+    /**
+     * Constructor passing in the amount of maximum MB file size that resources
+     * can be when exported.
+     *
+     * @param maximumFileSize the maximum resource file size in megabytes
+     */
     public ExportAttributes(int maximumFileSize) {
         this.maximumFileSize = maximumFileSize;
     }
 
+    /**
+     * Constructor passing in the amount of maximum MB file size that resources
+     * can be when exported, and the desired name of the export folder.
+     *
+     * @param maximumFileSize  the maximum resource file size in megabytes
+     * @param exportFolderName the desired export folder name
+     */
     public ExportAttributes(int maximumFileSize, String exportFolderName) {
         this.maximumFileSize = maximumFileSize;
         this.exportFolderName = exportFolderName;

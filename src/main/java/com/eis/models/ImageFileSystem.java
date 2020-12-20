@@ -65,7 +65,7 @@ public class ImageFileSystem {
 
     /**
      * Single parameter constructor containing the root path of the file system.
-     * See defaults for <code>parsableFileExtensions</code> & <code>exportFileExtension</code>.
+     * See defaults for <code>parsableFileExtensions</code> and <code>exportFileExtension</code>.
      *
      * @param rootPath the root path for this file system.
      */
