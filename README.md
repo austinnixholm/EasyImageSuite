@@ -10,11 +10,19 @@ This project was written for personal usage, but is free to use under the MIT Li
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/austinnixholm/EasyImageSuite/blob/main/LICENSE)
 
 ## Progress & Updates
-Current version: **0.0.1**
+Current version: **0.1.0**
 
-This version currently only supports exporting resource files as of October 25th, 2020. 
+This version currently supports exporting and importing encrypted resource files using AES-256-CBC as of December 19, 2020.
 
-Importing of resource files will be added in short time.
+See src/test for a working *no restrictions* implementation.
+Note: Export restrictions are not fully tested.
+
+### Version 0.1.0:
+- Cleaned up project, refactored directories
+- Changed implementation of AES-256-CBC encryption/decryption
+- Implemented JUnit to the project as the testing platform
+- Implemented importing of resource files
+- Modified header format for resource files
 
 ### Version 0.0.1: 
 - Upload project to github
