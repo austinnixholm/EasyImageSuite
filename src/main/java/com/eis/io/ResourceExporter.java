@@ -19,12 +19,12 @@ import java.util.stream.IntStream;
 import static com.eis.SuiteGlobals.*;
 import static com.eis.models.error.SuiteErrorType.*;
 
-public class Exporter {
+public class ResourceExporter {
 
     @Getter
     private ExportAttributes exportAttributes = new ExportAttributes();
 
-    public Exporter setExportAttributes(ExportAttributes attributes) {
+    public ResourceExporter setExportAttributes(ExportAttributes attributes) {
         this.exportAttributes = attributes;
         return this;
     }
@@ -40,6 +40,7 @@ public class Exporter {
      * @return the {@link SuiteExportResponse} for this operation.
      * @throws IOException
      */
+    @SuppressWarnings({"ResultOfMethodCallIgnored"})
     public SuiteExportResponse export(ImageFileSystem fileSystem, String encryptionKey, String iv) throws IOException {
         SuiteExportResponse response = new SuiteExportResponse();
 

@@ -1,6 +1,10 @@
 package com.eis;
 
+import lombok.SneakyThrows;
+import org.apache.commons.io.IOUtils;
+
 import java.io.*;
+import java.net.URL;
 import java.util.*;
 
 public final class SuiteGlobals {
@@ -14,6 +18,12 @@ public final class SuiteGlobals {
     public static final String ANSI_YELLOW = "\u001B[33m";
     public static final String ANSI_RED = "\u001B[31m";
     public static final String ANSI_BLACK_BACKGROUND = "\u001B[40m";
+
+    @SneakyThrows
+    public static boolean inJarFileSystem() {
+        String protocol = Class.class.getClassLoader().getResource("").getProtocol();
+        return Objects.equals(protocol, "jar");
+    }
 
     /**
      * Converts a file into an array of bytes.
@@ -41,6 +51,11 @@ public final class SuiteGlobals {
             e.printStackTrace();
         }
         return content;
+    }
+
+    @SneakyThrows
+    public static byte[] inputStreamToBytes(InputStream inputStream) {
+        return IOUtils.toByteArray(inputStream);
     }
 
     /**

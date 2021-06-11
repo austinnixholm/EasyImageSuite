@@ -25,7 +25,7 @@ public class ImageFileSystem {
      * The root path for file searching.
      */
     @Getter
-    private String rootPath;
+    private final String rootPath;
     /**
      * The file extension that is added at the end of an exported file.
      * <p>Default file extension is '.JRC'</p>
@@ -47,14 +47,14 @@ public class ImageFileSystem {
      * within the file system.
      */
     @Getter
-    private List<String> ignoredFolders = new ArrayList<>();
+    private final List<String> ignoredFolders = new ArrayList<>();
 
     /**
      * A list of ignored file names to skip over when parsing image files
      * within the file system. These file names may or may not include their extensions.
      */
     @Getter
-    private List<String> ignoredFileNames = new ArrayList<>();
+    private final List<String> ignoredFileNames = new ArrayList<>();
 
     /**
      * The name of the folder containing any exported/importable resource files.

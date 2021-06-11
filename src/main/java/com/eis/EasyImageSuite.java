@@ -1,7 +1,7 @@
 package com.eis;
 
-import com.eis.io.Exporter;
-import com.eis.io.Importer;
+import com.eis.io.ResourceExporter;
+import com.eis.io.ResourceImporter;
 import com.eis.models.*;
 import com.eis.models.error.SuiteError;
 import com.eis.models.response.SuiteExportResponse;
@@ -22,8 +22,10 @@ import static com.eis.SuiteGlobals.*;
 public class EasyImageSuite {
     @Getter
     private ImageFileSystem imageFileSystem;
-    private final Exporter exporter = new Exporter();
-    private final Importer importer = new Importer();
+    private final ResourceExporter exporter = new ResourceExporter();
+    private final ResourceImporter importer = new ResourceImporter();
+
+    private static boolean runningFromJar = false;
 
     /**
      * Sets the ImageFileSystem object, containing information on the filesystem
@@ -82,10 +84,30 @@ public class EasyImageSuite {
         return new SuiteCredentialGenerationResponse(EncryptionFunctions.generateKey(type), EncryptionFunctions.generateIV(type));
     }
 
+    /**
+     * Is this library being used in an application currently running as a JAR file?
+     *
+     * @param fromJar true if running from a JAR file.
+     */
+    public void setRunningFromJar(boolean fromJar) {
+        EasyImageSuite.runningFromJar = fromJar;
+    }
+
     private void tryPrintErrors(SuiteResponse response) {
         if (!response.sucessful)
             for (SuiteError err : response.getErrors())
                 logErr(err.toString());
     }
 
+    public ResourceExporter getExporter() {
+        return exporter;
+    }
+
+    public ResourceImporter getImporter() {
+        return importer;
+    }
+
+    public static boolean isRunningFromJar() {
+        return runningFromJar;
+    }
 }

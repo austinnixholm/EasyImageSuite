@@ -1,5 +1,6 @@
 package com.eis.models;
 
+import com.eis.io.ResourceExporter;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,7 +9,7 @@ import static com.eis.SuiteGlobals.*;
 /**
  * Specific attributes associated with resource file exporting.
  *
- * @see com.eis.io.Exporter
+ * @see ResourceExporter
  */
 public class ExportAttributes {
     /**

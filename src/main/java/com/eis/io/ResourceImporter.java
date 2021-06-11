@@ -1,5 +1,6 @@
 package com.eis.io;
 
+import com.eis.interfaces.ResourceProgressObserver;
 import com.eis.models.*;
 import com.eis.models.response.SuiteImportResponse;
 import com.eis.security.EncryptionFunctions;
@@ -10,58 +11,68 @@ import lombok.SneakyThrows;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Objects;
+import java.util.List;
 
 import static com.eis.SuiteGlobals.*;
 import static com.eis.models.error.SuiteErrorType.*;
 
-public class Importer {
+public class ResourceImporter {
+
+    private final List<ResourceProgressObserver> observers = new ArrayList<>();
 
     @Getter
     @Setter
     private String resourceFileExtension = DEFAULT_FILE_EXTENSION;
 
-    @SneakyThrows
     public SuiteImportResponse importResources(ImageFileSystem fileSystem, String decryptionKey, String iv) {
         SuiteImportResponse response = new SuiteImportResponse();
-        String resourceFolderName = fileSystem.getResourceFolder();
         log("Starting resource import\n");
-
-        // Ensure that the the resource folder name is valid.
-        if (resourceFolderName.isEmpty())
-            return response.setError(NO_RESOURCE_FOLDER_SPECIFIED, "Please enter a resource folder to import from.");
-
-        String resourceFolderPath = fileSystem.getRootPath() + File.separator + resourceFolderName;
-        File resourceFolderFile = new File(resourceFolderPath);
-
-        if (!resourceFolderFile.isDirectory())
-            return response.setError(INVALID_RESOURCE_DIRECTORY, "The entered resource folder name was not a valid directory.\n" + resourceFolderFile.getAbsolutePath());
 
         // Go through each resource file.
         try {
             ImageIO.setUseCache(false);
-            for (File file : Objects.requireNonNull(resourceFolderFile.listFiles())) {
-                String extension = getFileExtension(file);
-                String absolutePath = file.getAbsolutePath();
-                boolean invalidResourceFile = !extension.toLowerCase().equals(this.resourceFileExtension.toLowerCase());
 
-                if (invalidResourceFile) continue;
-                byte[] bytes = fileToBytes(absolutePath);
+            int fileIndex = 1;
+            int currentMaxIndices;
+            int currentIndex = -1;
+            // Create our data accumulator for our resource files.
+            ResourceDataAccumulator accumulator = new ResourceDataAccumulator(fileSystem);
+
+            // Get all file data from given filesystem information.
+            ArrayList<ResourceFileData> resourceFileData = accumulator.getResourceFileData(this.resourceFileExtension);
+            log("Attempting to gather resource data...");
+            // Get the max number of files
+            final int maxFiles = resourceFileData.size();
+            // Go through each bit of data...
+            for (ResourceFileData data : resourceFileData) {
+                // Constant information from the data
+                final byte[] bytes = data.getData();
+                final String fileName = data.getFileName();
+                final String filePath = data.getFilePath();
+
+                // Decrypt this given the decryption key and IV
                 String decryptedData = EncryptionFunctions.decrypt(new String(bytes), decryptionKey, iv);
 
-                log("Decrypting '" + file.getName() + "'...");
-                response.getRawImportData().add(new BasicKeyValuePair<>(file.getCanonicalPath(), decryptedData));
+                log("Reading '" + fileName + "'...");
+                // Add the raw-decrypted text to the raw import data, with the original resource file path
+                response.getRawImportData().add(new BasicKeyValuePair<>(filePath, decryptedData));
 
                 // Copy the decrypted data to its own buffer string
                 String buffer = String.valueOf(decryptedData);
+                currentMaxIndices = buffer.length();
                 boolean endOfFile = false;
                 do {
                     // Find the delimiter for the max path length sector
+                    final int totalStartIndex = decryptedData.indexOf(buffer);
                     int pathLenDelimIdx = buffer.indexOf(':');
-                    if (pathLenDelimIdx == -1) break;
+                    if (pathLenDelimIdx == -1) {
+                        notifyChange(fileIndex, maxFiles, currentIndex, currentMaxIndices, true);
+                        break;
+                    }
+                    currentIndex = totalStartIndex + pathLenDelimIdx;
                     // Seek to the first header delimiter
                     String pathLengthSector = buffer.substring(0, pathLenDelimIdx).replace(":", "").replace(" ", "");
 
@@ -97,18 +108,24 @@ public class Importer {
                         endOfFile = true;
                     else
                         buffer = buffer.substring(imageCharsLen);
+                    notifyChange(fileIndex, maxFiles, currentIndex, currentMaxIndices, endOfFile);
                 } while (!endOfFile);
 
+                fileIndex++;
             }
         } catch (Exception e) {
-            return response.setError(JAVA_EXCEPTION, e.toString() + "\n" + Arrays.toString(e.getStackTrace()));
+            return response.setError(JAVA_EXCEPTION, e + "\n" + Arrays.toString(e.getStackTrace()));
         }
         response.sucessful = true;
         return response;
     }
 
+    private void notifyChange(int fileCount, int maxFileCount, int currentIndex, int maxIndex, boolean eof) {
+        observers.forEach(o -> o.update(fileCount, maxFileCount, currentIndex, maxIndex, eof));
+    }
 
-
-
+    public void addObserver(ResourceProgressObserver observer) {
+        observers.add(observer);
+    }
 
 }

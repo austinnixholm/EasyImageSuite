@@ -130,14 +130,9 @@ public final class EncryptionFunctions {
     }
 
     public static String generate16ByteIV() {
-        byte[] iv = new byte[16];
-        try {
-            SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-            random.nextBytes(iv);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return "";
-        }
-        return new String(iv);
+        byte[] IV = new byte[16];
+        SecureRandom random = new SecureRandom();
+        random.nextBytes(IV);
+        return Base64.getEncoder().encodeToString(IV).substring(0,16);
     }
 }
